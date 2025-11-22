@@ -16,3 +16,9 @@ export interface SheetsGoals {
   amountDonated: number;
   donationGoal: number;
 }
+
+export interface TotalDonationsCounter {
+  totalAmount: number;
+  totalCount: number;
+  lastUpdated: Date;
+}

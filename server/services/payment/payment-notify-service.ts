@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { prisma } from '../../prisma';
+import { incrementTotalDonations } from '../total-donations-counter-service';
 
 export async function handlePaymentNotification(orderToken: string) {
   let secretKey = process.env.MONTONIO_SANDBOX_SECRET_KEY;
@@ -12,6 +13,15 @@ export async function handlePaymentNotification(orderToken: string) {
   };
 
   if (decoded.paymentStatus === 'PAID') {
+    // Find the donation(s) that need to be marked as paid
+    const donations = await prisma.donation.findMany({
+      where: {
+        montonioMerchantReference: decoded.merchant_reference,
+        paid: false, // Only get unpaid donations to avoid double-counting
+      },
+    });
+
+    // Update the donations to paid
     await prisma.donation.updateMany({
       where: {
         montonioMerchantReference: decoded.merchant_reference,
@@ -20,5 +30,10 @@ export async function handlePaymentNotification(orderToken: string) {
         paid: true,
       },
     });
+
+    // Increment the total donations counter for each newly paid donation
+    for (const donation of donations) {
+      await incrementTotalDonations(donation.amount);
+    }
   }
 }

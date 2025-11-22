@@ -15,6 +15,7 @@ import GoogleAuthService from './services/google/google-auth-service';
 
   app.get('/api/paymentMethods', PaymentController.paymentMethodsHandler);
   app.get('/api/paymentData', PaymentController.paymentDataHandler);
+  app.get('/api/totalDonations', PaymentController.totalDonationsHandler);
   app.post('/api/createOrder', PaymentController.createOrder);
   app.post('/api/paymentNotify', PaymentController.paymentNotifyHandler);
   app.get('/api/paymentReturn', PaymentController.paymentReturnHandler);
