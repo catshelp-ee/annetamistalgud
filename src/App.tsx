@@ -427,10 +427,10 @@ export default function App() {
               <div className="mb-8">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                   {[
-                    { name: 'SEB', bg: 'bg-[lightgreen]', text: 'text-black' },
-                    { name: 'Swedbank', bg: 'bg-[orange]', text: 'text-black' },
+                    { name: 'SEB', bg: 'bg-[#60CD18]', text: 'text-black' },
+                    { name: 'Swedbank', bg: 'bg-[#EE7023]', text: 'text-white' },
                     { name: 'LHV', bg: 'bg-black', text: 'text-white' },
-                    { name: 'Luminor', bg: 'bg-[darkred]', text: 'text-white' }
+                    { name: 'Luminor', bg: 'bg-[#481335]', text: 'text-white' }
                   ].map((bank) => (
                     <button
                       key={bank.name}
@@ -443,7 +443,7 @@ export default function App() {
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { name: 'Coop', bg: 'bg-[royalblue]', text: 'text-white' },
+                    { name: 'Coop', bg: 'bg-[#00B6FF]', text: 'text-white' },
                     { name: 'Citadele', bg: 'bg-[crimson]', text: 'text-white' },
                     { name: 'Revolut', bg: 'bg-white', text: 'text-black' }
                   ].map((bank) => (
