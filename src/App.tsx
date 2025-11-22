@@ -427,32 +427,34 @@ export default function App() {
               <div className="mb-8">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                   {[
-                    { name: 'SEB', bg: 'bg-[#60CD18]', text: 'text-black' },
-                    { name: 'Swedbank', bg: 'bg-[#EE7023]', text: 'text-white' },
-                    { name: 'LHV', bg: 'bg-black', text: 'text-white' },
-                    { name: 'Luminor', bg: 'bg-[#481335]', text: 'text-white' }
+                    { name: 'SEB', bgColor: '#60CD18', textColor: 'text-black' },
+                    { name: 'Swedbank', bgColor: '#EE7023', textColor: 'text-white' },
+                    { name: 'LHV', bgColor: '#000000', textColor: 'text-white' },
+                    { name: 'Luminor', bgColor: '#481335', textColor: 'text-white' }
                   ].map((bank) => (
                     <button
                       key={bank.name}
                       onClick={() => setSelectedBank(bank.name)}
-                      className={`${bank.bg} border-2 border-black rounded-[247px] h-[60px] flex items-center justify-center hover:opacity-90 transition-all ${selectedBank === bank.name ? 'ring-4 ring-[#29d4e8]' : ''}`}
+                      style={{ backgroundColor: bank.bgColor }}
+                      className={`border-2 border-black rounded-[247px] h-[60px] flex items-center justify-center hover:opacity-90 transition-all ${selectedBank === bank.name ? 'ring-4 ring-[#29d4e8]' : ''}`}
                     >
-                      <span className={`font-['Schoolbell',sans-serif] text-[18px] ${bank.text}`}>{bank.name}</span>
+                      <span className={`font-['Schoolbell',sans-serif] text-[18px] ${bank.textColor}`}>{bank.name}</span>
                     </button>
                   ))}
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { name: 'Coop', bg: 'bg-[#00B6FF]', text: 'text-white' },
-                    { name: 'Citadele', bg: 'bg-[crimson]', text: 'text-white' },
-                    { name: 'Revolut', bg: 'bg-white', text: 'text-black' }
+                    { name: 'Coop', bgColor: '#00B6FF', textColor: 'text-white' },
+                    { name: 'Citadele', bgColor: '#DC143C', textColor: 'text-white' },
+                    { name: 'Revolut', bgColor: '#FFFFFF', textColor: 'text-black' }
                   ].map((bank) => (
                     <button
                       key={bank.name}
                       onClick={() => setSelectedBank(bank.name)}
-                      className={`${bank.bg} border-2 border-black rounded-[247px] h-[60px] flex items-center justify-center hover:opacity-90 transition-all ${selectedBank === bank.name ? 'ring-4 ring-[#29d4e8]' : ''}`}
+                      style={{ backgroundColor: bank.bgColor }}
+                      className={`border-2 border-black rounded-[247px] h-[60px] flex items-center justify-center hover:opacity-90 transition-all ${selectedBank === bank.name ? 'ring-4 ring-[#29d4e8]' : ''}`}
                     >
-                      <span className={`font-['Schoolbell',sans-serif] text-[18px] ${bank.text}`}>{bank.name}</span>
+                      <span className={`font-['Schoolbell',sans-serif] text-[18px] ${bank.textColor}`}>{bank.name}</span>
                     </button>
                   ))}
                 </div>
