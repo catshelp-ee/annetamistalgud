@@ -88,3 +88,35 @@ export async function getDonationData(refreshCache = false): Promise<Goal[]> {
 
   return result;
 }
+
+/**
+ * Get vet bills in format suitable for frontend
+ */
+export async function getVetBills() {
+  const goals = await prisma.goal.findMany({
+    where: {
+      code: {
+        not: 'hoiukodu' // Exclude special goals
+      }
+    },
+    orderBy: { id: 'asc' }
+  });
+
+  const donationsSummary = await prisma.donation.groupBy({
+    by: ['goalID'],
+    _sum: { amount: true },
+    where: { paid: true }
+  });
+
+  return goals.map(goal => {
+    const donation = donationsSummary.find(d => d.goalID === goal.id);
+    return {
+      id: goal.id,
+      name: goal.name,
+      issue: goal.issue || '',
+      current: donation?._sum.amount ?? 0,
+      goal: goal.target,
+      color: goal.color
+    };
+  });
+}

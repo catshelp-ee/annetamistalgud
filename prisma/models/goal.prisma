@@ -8,6 +8,7 @@ model Goal {
   link        String     @default("#donation-section") @db.Text
   message     String     @default("Toeta")
   description String     @default("default kijreldus") @db.Text
+  issue       String?    @db.Text
   donations   Donation[]
 
   @@map("goals")

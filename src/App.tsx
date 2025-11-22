@@ -11,10 +11,12 @@ import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 
 interface VetBill {
+  id?: number;
   name: string;
   issue: string;
   current: number;
   goal: number;
+  code?: string;
 }
 
 interface TotalDonations {
@@ -23,44 +25,61 @@ interface TotalDonations {
   lastUpdated: string;
 }
 
+// Montonio types
+declare global {
+  interface Window {
+    Montonio?: {
+      Checkout?: {
+        PaymentInitiation?: {
+          create: (config: any) => {
+            init: () => void;
+          };
+        };
+      };
+    };
+  }
+}
+
 export default function App() {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
   const [selgitus, setSelgitus] = useState("Kliinikuarvete toetus Annetamistalgudel");
   const [selectedBank, setSelectedBank] = useState<string | null>(null);
-
-  // Load vet bills from localStorage with default data
-  const getDefaultVetBills = (): VetBill[] => [
-    { name: "Cat Clinicus", issue: "", current: 1988, goal: 2845 },
-    { name: "Miki loomakliinikus", issue: "", current: 1230, goal: 3000 },
-    { name: "Tartu Väikeloomakliinik", issue: "", current: 892, goal: 1043 },
-    { name: "Vetdok Ida-Virumaal", issue: "", current: 385, goal: 1100 },
-    { name: "Terveks loomakliinik", issue: "", current: 680, goal: 750 },
-    { name: "Pärnu Väikeloomakliinik", issue: "", current: 445, goal: 750 },
-    { name: "Felivet loomakliinik", issue: "", current: 208, goal: 222 },
-    { name: "Petcity", issue: "", current: 325, goal: 908 },
-    { name: "Erivet", issue: "", current: 342, goal: 527 },
-    { name: "Haabersti loomakliinik", issue: "", current: 1056, goal: 2029 },
-    { name: "Mustakivi loomakliinik", issue: "", current: 392, goal: 500 },
-  ];
-
-  const [vetBills, setVetBills] = useState<VetBill[]>(() => {
-    const saved = localStorage.getItem("vetBills");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return getDefaultVetBills();
-      }
-    }
-    return getDefaultVetBills();
-  });
+  const [selectedBillCode, setSelectedBillCode] = useState<string | null>(null);
+  const [vetBills, setVetBills] = useState<VetBill[]>([]);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
 
   const [totalDonations, setTotalDonations] = useState<TotalDonations>({
     totalAmount: 0,
     totalCount: 0,
     lastUpdated: new Date().toISOString(),
   });
+
+  // Fetch vet bills from API
+  useEffect(() => {
+    const fetchVetBills = async () => {
+      try {
+        const response = await fetch('/api/admin/goals');
+        if (response.ok) {
+          const data = await response.json();
+          setVetBills(data);
+
+          // Set first bill as default selection
+          if (data.length > 0 && data[0].code) {
+            setSelectedBillCode(data[0].code);
+            setSelgitus(data[0].name);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch vet bills:', error);
+      }
+    };
+
+    fetchVetBills();
+    // Refresh every 5 minutes
+    const interval = setInterval(fetchVetBills, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Fetch total donations from API
   useEffect(() => {
@@ -77,40 +96,64 @@ export default function App() {
     };
 
     fetchTotalDonations();
-
     // Refresh every 5 minutes
     const interval = setInterval(fetchTotalDonations, 5 * 60 * 1000);
-
     return () => clearInterval(interval);
-  }, []);
-
-  // Listen for localStorage changes from admin page
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const saved = localStorage.getItem("vetBills");
-      if (saved) {
-        try {
-          setVetBills(JSON.parse(saved));
-        } catch {
-          // Keep current state on parse error
-        }
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-
-    // Also listen for custom event from same page
-    const handleLocalUpdate = () => handleStorageChange();
-    window.addEventListener("vetBillsUpdated", handleLocalUpdate);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("vetBillsUpdated", handleLocalUpdate);
-    };
   }, []);
 
   const totalCurrent = vetBills.reduce((sum, bill) => sum + bill.current, 0);
   const totalGoal = vetBills.reduce((sum, bill) => sum + bill.goal, 0);
+
+  // Handle payment submission
+  const handlePayment = async () => {
+    const amount = selectedAmount || parseFloat(customAmount);
+
+    if (!amount || amount <= 0) {
+      alert('Palun vali või sisesta kehtiv summa');
+      return;
+    }
+
+    if (!selectedBank) {
+      alert('Palun vali pank');
+      return;
+    }
+
+    if (!selectedBillCode) {
+      alert('Palun vali kliinik');
+      return;
+    }
+
+    try {
+      setPaymentProcessing(true);
+
+      const payload = {
+        preferredBank: selectedBank,
+        preferredRegion: 'EE',
+        donationType: selectedBillCode,
+        donationTotal: amount,
+      };
+
+      const response = await fetch('/api/createOrder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Payment order creation failed');
+      }
+
+      const paymentUrl = await response.json();
+      // Redirect to Montonio payment page
+      window.location.href = paymentUrl;
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('Makse algatamine ebaõnnestus. Palun proovi uuesti.');
+      setPaymentProcessing(false);
+    }
+  };
 
   return (
     <div className="relative min-h-screen w-full bg-[#f9e9f3] overflow-x-clip scroll-smooth">
@@ -348,6 +391,7 @@ export default function App() {
                   <Button
                     onClick={() => {
                       setSelgitus(bill.name);
+                      setSelectedBillCode(bill.code || null);
                       const donationSection = document.getElementById('donation-section');
                       donationSection?.scrollIntoView({ behavior: 'smooth' });
                     }}
@@ -462,19 +506,11 @@ export default function App() {
 
               {/* Submit Button */}
               <Button
-                onClick={() => {
-                  const amount = selectedAmount || parseFloat(customAmount);
-                  if (amount && selectedBank) {
-                    alert(`Annetamine: ${amount}€ läbi ${selectedBank}`);
-                  } else if (!amount) {
-                    alert('Palun vali või sisesta summa');
-                  } else if (!selectedBank) {
-                    alert('Palun vali pank');
-                  }
-                }}
-                className="w-full bg-[#ff80ce] hover:bg-[#ff90d6] text-white font-['Schoolbell',sans-serif] text-[28px] md:text-[32px] h-[70px] rounded-[247px] transition-colors"
+                onClick={handlePayment}
+                disabled={paymentProcessing}
+                className="w-full bg-[#ff80ce] hover:bg-[#ff90d6] text-white font-['Schoolbell',sans-serif] text-[28px] md:text-[32px] h-[70px] rounded-[247px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Maksma
+                {paymentProcessing ? 'Laadin...' : 'Maksma'}
               </Button>
             </div>
 
