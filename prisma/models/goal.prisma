@@ -3,6 +3,7 @@ model Goal {
   name        String     @db.Text
   code        String     @db.Text
   target      Float      @db.Double
+  current     Float      @default(0) @db.Double
   color       String     @db.Text
   unit        String     @default("€") @db.VarChar(10)
   link        String     @default("#donation-section") @db.VarChar(500)

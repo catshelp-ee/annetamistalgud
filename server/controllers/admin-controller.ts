@@ -39,21 +39,14 @@ export async function verifyHandler(req: Request, res: Response) {
 export async function listGoalsHandler(req: Request, res: Response) {
   try {
     const goals = await prisma.goal.findMany({
-      include: {
-        donations: {
-          where: { paid: true },
-          select: { amount: true }
-        }
-      },
       orderBy: { id: 'asc' }
     });
 
-    // Calculate current amounts
     const goalsWithAmounts = goals.map(goal => ({
       id: goal.id,
       name: goal.name,
       issue: goal.issue || '',
-      current: goal.donations.reduce((sum, d) => sum + d.amount, 0),
+      current: goal.current,
       goal: goal.target,
       color: goal.color,
       code: goal.code
@@ -67,7 +60,7 @@ export async function listGoalsHandler(req: Request, res: Response) {
 }
 
 export async function createGoalHandler(req: Request, res: Response) {
-  const { name, issue, goal, color, code } = req.body;
+  const { name, issue, goal, current, color, code } = req.body;
 
   if (!name || !goal) {
     return res.status(400).json({ error: 'Name and goal are required' });
@@ -79,6 +72,7 @@ export async function createGoalHandler(req: Request, res: Response) {
         name,
         issue: issue || null,
         target: parseFloat(goal),
+        current: current ? parseFloat(current) : 0,
         color: color || '#ff80ce',
         code: code || name.toLowerCase().replace(/\s+/g, '-'),
         unit: '€',
@@ -97,7 +91,7 @@ export async function createGoalHandler(req: Request, res: Response) {
 
 export async function updateGoalHandler(req: Request, res: Response) {
   const { id } = req.params;
-  const { name, issue, goal, color } = req.body;
+  const { name, issue, goal, current, color } = req.body;
 
   try {
     const updated = await prisma.goal.update({
@@ -106,6 +100,7 @@ export async function updateGoalHandler(req: Request, res: Response) {
         name,
         issue: issue || null,
         target: parseFloat(goal),
+        current: parseFloat(current),
         color: color || '#ff80ce'
       }
     });
