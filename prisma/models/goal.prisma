@@ -4,10 +4,10 @@ model Goal {
   code        String     @db.Text
   target      Float      @db.Double
   color       String     @db.Text
-  unit        String     @default("€")
-  link        String     @default("#donation-section") @db.Text
-  message     String     @default("Toeta")
-  description String     @default("default kijreldus") @db.Text
+  unit        String     @default("€") @db.VarChar(10)
+  link        String     @default("#donation-section") @db.VarChar(500)
+  message     String     @default("Toeta") @db.VarChar(100)
+  description String     @db.Text
   issue       String?    @db.Text
   donations   Donation[]
 
