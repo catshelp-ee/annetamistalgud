@@ -221,12 +221,12 @@ export default function Admin() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#f9e9f3] flex items-center justify-center p-4">
-        <div className="bg-white rounded-[20px] shadow-lg p-8 max-w-sm w-full">
+        <div className="bg-white rounded-[20px] shadow-lg p-8 max-w-xs">
           <h1 className="font-['Schoolbell',sans-serif] text-[#29d4e8] text-[40px] uppercase text-center mb-6">
             Admin Login
           </h1>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
+          <form onSubmit={handleLogin}>
+            <div className="mb-6">
               <label className="font-['Schoolbell',sans-serif] text-[#062d3e] text-[22px] mb-2 block">
                 Parool
               </label>
@@ -257,7 +257,7 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-[#f9e9f3] p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-[20px] shadow-lg p-6 mb-6">
           <div className="flex justify-between items-center">
