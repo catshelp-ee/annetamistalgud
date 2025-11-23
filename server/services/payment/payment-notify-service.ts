@@ -31,9 +31,19 @@ export async function handlePaymentNotification(orderToken: string) {
       },
     });
 
-    // Increment the total donations counter for each newly paid donation
+    // Increment the total donations counter and goal's current amount for each newly paid donation
     for (const donation of donations) {
       await incrementTotalDonations(donation.amount);
+
+      // Increment the goal's current amount
+      await prisma.goal.update({
+        where: { id: donation.goalID },
+        data: {
+          current: {
+            increment: donation.amount
+          }
+        }
+      });
     }
   }
 }

@@ -19,12 +19,6 @@ interface VetBill {
   code?: string;
 }
 
-interface TotalDonations {
-  totalAmount: number;
-  totalCount: number;
-  lastUpdated: string;
-}
-
 // Montonio types
 declare global {
   interface Window {
@@ -49,25 +43,28 @@ export default function App() {
   const [vetBills, setVetBills] = useState<VetBill[]>([]);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
 
-  const [totalDonations, setTotalDonations] = useState<TotalDonations>({
-    totalAmount: 0,
-    totalCount: 0,
-    lastUpdated: new Date().toISOString(),
-  });
-
   // Fetch vet bills from API
   useEffect(() => {
     const fetchVetBills = async () => {
       try {
-        const response = await fetch('/api/admin/goals');
+        const response = await fetch('/api/paymentData');
         if (response.ok) {
           const data = await response.json();
-          setVetBills(data);
+          // Transform the data to match VetBill interface
+          const bills = data.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            issue: item.description || '',
+            current: item.amountDonated,
+            goal: item.donationGoal,
+            code: item.code
+          }));
+          setVetBills(bills);
 
           // Set first bill as default selection
-          if (data.length > 0 && data[0].code) {
-            setSelectedBillCode(data[0].code);
-            setSelgitus(data[0].name);
+          if (bills.length > 0 && bills[0].code) {
+            setSelectedBillCode(bills[0].code);
+            setSelgitus(bills[0].name);
           }
         }
       } catch (error) {
@@ -78,26 +75,6 @@ export default function App() {
     fetchVetBills();
     // Refresh every 5 minutes
     const interval = setInterval(fetchVetBills, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Fetch total donations from API
-  useEffect(() => {
-    const fetchTotalDonations = async () => {
-      try {
-        const response = await fetch('/api/totalDonations');
-        if (response.ok) {
-          const data = await response.json();
-          setTotalDonations(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch total donations:', error);
-      }
-    };
-
-    fetchTotalDonations();
-    // Refresh every 5 minutes
-    const interval = setInterval(fetchTotalDonations, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -193,12 +170,12 @@ export default function App() {
               <div className="mb-6">
                 <div className="flex justify-between items-baseline mb-3">
                   <p className="font-['Schoolbell',sans-serif] text-[#ff80ce] text-[24px] sm:text-[30px] uppercase">Kogutud kokku</p>
-                  <p className="font-['Schoolbell',sans-serif] text-[#062d3e] text-[20px] sm:text-[25px]">{totalDonations.totalAmount.toFixed(2)}€ / {totalGoal}€</p>
+                  <p className="font-['Schoolbell',sans-serif] text-[#062d3e] text-[20px] sm:text-[25px]">{totalCurrent.toFixed(2)}€ / {totalGoal}€</p>
                 </div>
                 <div className="bg-[rgba(160,150,121,0.26)] h-[50px] relative rounded-[247px] overflow-hidden">
                   <div
                     className="absolute h-full bg-[#ff80ce] rounded-[247px] transition-all duration-500"
-                    style={{ width: `${Math.min((totalDonations.totalAmount / totalGoal) * 100, 100)}%` }}
+                    style={{ width: `${Math.min((totalCurrent / totalGoal) * 100, 100)}%` }}
                   />
                 </div>
               </div>
@@ -239,14 +216,14 @@ export default function App() {
                   <p className="absolute font-['Schoolbell',sans-serif] leading-[60px] left-0 not-italic text-[#ff80ce] text-[40px] text-nowrap top-0 tracking-[-2px] uppercase whitespace-pre">Kogutud kokku</p>
                 </div>
                 <div className="absolute h-[52.5px] left-[824.33px] top-[7.5px] w-[247.672px]">
-                  <p className="absolute font-['Schoolbell',sans-serif] leading-[52.5px] left-0 not-italic text-[#062d3e] text-[35px] top-0 tracking-[1.5px] w-[248px]">{totalDonations.totalAmount.toFixed(2)}€ / {totalGoal}€</p>
+                  <p className="absolute font-['Schoolbell',sans-serif] leading-[52.5px] left-0 not-italic text-[#062d3e] text-[35px] top-0 tracking-[1.5px] w-[248px]">{totalCurrent.toFixed(2)}€ / {totalGoal}€</p>
                 </div>
               </div>
 
               {/* Progress Bar */}
               <div className="bg-[rgba(160,150,121,0.26)] h-[60px] relative rounded-[247px] shrink-0 w-full">
                 <div className="overflow-clip rounded-[inherit] size-full">
-                  <div className="box-border content-stretch flex flex-col h-[60px] items-start relative w-full" style={{ paddingRight: `${Math.max(0, 100 - Math.min((totalDonations.totalAmount / totalGoal) * 100, 100))}%` }}>
+                  <div className="box-border content-stretch flex flex-col h-[60px] items-start relative w-full" style={{ paddingRight: `${Math.max(0, 100 - Math.min((totalCurrent / totalGoal) * 100, 100))}%` }}>
                     <div className="bg-[#ff80ce] h-[60px] rounded-[247px] shrink-0 w-full" />
                   </div>
                 </div>
