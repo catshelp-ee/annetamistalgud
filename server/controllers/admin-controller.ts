@@ -16,6 +16,7 @@ export async function loginHandler(req: Request, res: Response) {
   }
 
   try {
+    console.log('Login attempt - JWT_SECRET:', JWT_SECRET?.substring(0, 10) + '...');
     const isValid = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
 
     if (!isValid) {
@@ -23,6 +24,7 @@ export async function loginHandler(req: Request, res: Response) {
     }
 
     const token = jwt.sign({ adminId: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
+    console.log('Token generated successfully');
     res.json({ token });
   } catch (error) {
     console.error('Login error:', error);

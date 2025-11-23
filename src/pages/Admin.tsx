@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 
@@ -26,53 +26,40 @@ export default function Admin() {
   });
   const [loading, setLoading] = useState(false);
 
-  // Check authentication on mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      if (authToken) {
-        try {
-          const response = await fetch('/api/admin/verify', {
-            headers: {
-              'Authorization': `Bearer ${authToken}`
-            }
-          });
+  // Logout handler (defined early so it can be used in useCallback)
+  const handleLogout = useCallback(() => {
+    console.log('Logging out...');
+    setAuthToken(null);
+    localStorage.removeItem('adminToken');
+    setIsAuthenticated(false);
+    setVetBills([]);
+  }, []);
 
-          if (response.ok) {
-            setIsAuthenticated(true);
-            fetchVetBills();
-          } else {
-            // Token invalid, clear it
-            localStorage.removeItem('adminToken');
-            setAuthToken(null);
-          }
-        } catch (error) {
-          console.error('Auth check failed:', error);
-          localStorage.removeItem('adminToken');
-          setAuthToken(null);
-        }
-      }
-    };
+  // Fetch vet bills
+  const fetchVetBills = useCallback(async () => {
+    if (!authToken) {
+      console.log('No auth token, skipping fetch');
+      return;
+    }
 
-    checkAuth();
-  }, [authToken]);
-
-  const apiHeaders = () => ({
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${authToken}`
-  });
-
-  const fetchVetBills = async () => {
     try {
       setLoading(true);
+      console.log('Fetching vet bills with token:', authToken?.substring(0, 20) + '...');
       const response = await fetch('/api/admin/goals', {
-        headers: apiHeaders()
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        }
       });
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Vet bills loaded:', data.length, 'items');
         setVetBills(data);
       } else if (response.status === 401) {
         // Unauthorized, logout
+        console.log('Unauthorized when fetching vet bills');
+        alert('Sessioon on aegunud. Palun logi uuesti sisse.');
         handleLogout();
       }
     } catch (error) {
@@ -81,6 +68,48 @@ export default function Admin() {
     } finally {
       setLoading(false);
     }
+  }, [authToken, handleLogout]);
+
+  // Check authentication on mount and when token changes
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (authToken) {
+        try {
+          console.log('Checking auth with token:', authToken?.substring(0, 20) + '...');
+          const response = await fetch('/api/admin/verify', {
+            headers: {
+              'Authorization': `Bearer ${authToken}`
+            }
+          });
+
+          if (response.ok) {
+            console.log('Auth check passed, setting authenticated...');
+            setIsAuthenticated(true);
+            // Fetch vet bills after successful auth check
+            fetchVetBills();
+          } else {
+            // Token invalid, clear it
+            console.log('Auth check failed, clearing token');
+            handleLogout();
+          }
+        } catch (error) {
+          console.error('Auth check failed:', error);
+          handleLogout();
+        }
+      } else {
+        setIsAuthenticated(false);
+      }
+    };
+
+    checkAuth();
+  }, [authToken, fetchVetBills, handleLogout]);
+
+  const apiHeaders = () => {
+    console.log('Creating API headers with token:', authToken?.substring(0, 20) + '...');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`
+    };
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -98,22 +127,18 @@ export default function Admin() {
       }
 
       const { token } = await response.json();
-      setAuthToken(token);
+      console.log('Login successful, received token:', token?.substring(0, 20) + '...');
+
+      // Store token - the useEffect will handle auth check and fetching data
       localStorage.setItem('adminToken', token);
-      setIsAuthenticated(true);
-      fetchVetBills();
+      setAuthToken(token);
+
+      console.log('Token saved to localStorage and state - auth check will run automatically');
     } catch (error) {
       alert('Vale parool!');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleLogout = () => {
-    setAuthToken(null);
-    localStorage.removeItem('adminToken');
-    setIsAuthenticated(false);
-    setVetBills([]);
   };
 
   const handleAddBill = async () => {
@@ -134,6 +159,7 @@ export default function Admin() {
         await fetchVetBills();
         setNewBill({ name: "", issue: "", current: 0, goal: 0 });
       } else if (response.status === 401) {
+        alert('Sessioon on aegunud. Palun logi uuesti sisse.');
         handleLogout();
       } else {
         throw new Error('Failed to create goal');
@@ -164,6 +190,7 @@ export default function Admin() {
         await fetchVetBills();
         setEditingIndex(null);
       } else if (response.status === 401) {
+        alert('Sessioon on aegunud. Palun logi uuesti sisse.');
         handleLogout();
       } else {
         throw new Error('Failed to update goal');
@@ -196,6 +223,7 @@ export default function Admin() {
       if (response.ok) {
         await fetchVetBills();
       } else if (response.status === 401) {
+        alert('Sessioon on aegunud. Palun logi uuesti sisse.');
         handleLogout();
       } else {
         throw new Error('Failed to delete goal');
@@ -324,7 +352,10 @@ export default function Admin() {
               <Input
                 type="number"
                 value={newBill.current}
-                onChange={(e) => setNewBill({ ...newBill, current: parseFloat(e.target.value) || 0 })}
+                onChange={(e) => {
+                  const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                  setNewBill({ ...newBill, current: value });
+                }}
                 className="h-[45px] rounded-[15px] border-2 border-black text-[16px] font-['Schoolbell',sans-serif] px-3"
                 placeholder="0"
                 disabled={loading}
@@ -337,7 +368,10 @@ export default function Admin() {
               <Input
                 type="number"
                 value={newBill.goal}
-                onChange={(e) => setNewBill({ ...newBill, goal: parseFloat(e.target.value) || 0 })}
+                onChange={(e) => {
+                  const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                  setNewBill({ ...newBill, goal: value });
+                }}
                 className="h-[45px] rounded-[15px] border-2 border-black text-[16px] font-['Schoolbell',sans-serif] px-3"
                 placeholder="0"
                 disabled={loading}
@@ -395,7 +429,8 @@ export default function Admin() {
                           value={bill.current}
                           onChange={(e) => {
                             const updated = [...vetBills];
-                            updated[index] = { ...updated[index], current: parseFloat(e.target.value) || 0 };
+                            const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                            updated[index] = { ...updated[index], current: value };
                             setVetBills(updated);
                           }}
                           className="h-[40px] rounded-[10px] border-2 border-black text-[16px] font-['Schoolbell',sans-serif] px-3"
@@ -407,7 +442,8 @@ export default function Admin() {
                           value={bill.goal}
                           onChange={(e) => {
                             const updated = [...vetBills];
-                            updated[index] = { ...updated[index], goal: parseFloat(e.target.value) || 0 };
+                            const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                            updated[index] = { ...updated[index], goal: value };
                             setVetBills(updated);
                           }}
                           className="h-[40px] rounded-[10px] border-2 border-black text-[16px] font-['Schoolbell',sans-serif] px-3"
