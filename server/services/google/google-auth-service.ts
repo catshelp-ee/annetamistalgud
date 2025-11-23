@@ -12,10 +12,11 @@ export default class GoogleAuthService {
   /**
    * Initializes the singleton instance (if not already initialized).
    * This must be awaited ONCE at app startup.
+   * Returns true if initialized successfully, false if credentials are missing.
    */
-  public static async init(): Promise<void> {
+  public static async init(): Promise<boolean> {
     if (GoogleAuthService.instance) {
-      return; // already initialized
+      return true; // already initialized
     }
 
     const isProd = process.env.NODE_ENV === 'production';
@@ -24,17 +25,31 @@ export default class GoogleAuthService {
       ? process.env.PROD_CREDENTIALS_PATH
       : 'credentials.json';
 
-    const auth = new google.auth.GoogleAuth({
-      keyFile: keyFilePath,
-      scopes: [
-        'https://www.googleapis.com/auth/drive',
-        'https://www.googleapis.com/auth/drive.file',
-      ],
-    });
+    // Check if credentials file exists
+    const fs = await import('fs');
+    if (!keyFilePath || !fs.existsSync(keyFilePath)) {
+      console.warn('⚠️  Google credentials not found. Google Sheets integration disabled.');
+      return false;
+    }
 
-    const client = (await auth.getClient()) as OAuth2Client;
+    try {
+      const auth = new google.auth.GoogleAuth({
+        keyFile: keyFilePath,
+        scopes: [
+          'https://www.googleapis.com/auth/drive',
+          'https://www.googleapis.com/auth/drive.file',
+        ],
+      });
 
-    GoogleAuthService.instance = new GoogleAuthService(client);
+      const client = (await auth.getClient()) as OAuth2Client;
+
+      GoogleAuthService.instance = new GoogleAuthService(client);
+      console.log('✅ Google Sheets integration initialized');
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to initialize Google Sheets:', error);
+      return false;
+    }
   }
 
   /**
