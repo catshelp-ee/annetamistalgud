@@ -415,7 +415,7 @@ export default function App() {
 
           <div className="relative max-w-[1000px] mx-auto">
             {/* White Card Container */}
-            <div className="relative max-w-[600px] mx-auto bg-white rounded-[30px] md:rounded-[40px] shadow-lg p-8 md:p-12 z-10">
+            <div className="relative max-w-[600px] mx-auto bg-white rounded-[30px] md:rounded-[40px] shadow-lg p-8 md:p-12 z-30">
               {/* Amount Selection Buttons */}
               <div className="grid grid-cols-2 gap-4 mb-6">
                 {[5, 10, 25, 50].map((amount) => (
@@ -479,8 +479,11 @@ export default function App() {
                     <button
                       key={bank.name}
                       onClick={() => setSelectedBank(bank.name)}
-                      style={{ backgroundColor: bank.bgColor }}
-                      className={`border-2 border-black rounded-[247px] h-[60px] flex items-center justify-center hover:opacity-90 transition-all ${selectedBank === bank.name ? 'ring-4 ring-[#29d4e8]' : ''}`}
+                      style={{
+                        backgroundColor: bank.bgColor,
+                        boxShadow: selectedBank === bank.name ? '0 0 0 4px #29d4e8' : 'none'
+                      }}
+                      className="border-2 border-black rounded-[247px] h-[60px] flex items-center justify-center hover:opacity-90 transition-all"
                     >
                       <span className={`font-['Schoolbell',sans-serif] text-[18px] ${bank.textColor}`}>{bank.name}</span>
                     </button>
@@ -495,8 +498,11 @@ export default function App() {
                     <button
                       key={bank.name}
                       onClick={() => setSelectedBank(bank.name)}
-                      style={{ backgroundColor: bank.bgColor }}
-                      className={`border-2 border-black rounded-[247px] h-[60px] flex items-center justify-center hover:opacity-90 transition-all ${selectedBank === bank.name ? 'ring-4 ring-[#29d4e8]' : ''}`}
+                      style={{
+                        backgroundColor: bank.bgColor,
+                        boxShadow: selectedBank === bank.name ? '0 0 0 4px #29d4e8' : 'none'
+                      }}
+                      className="border-2 border-black rounded-[247px] h-[60px] flex items-center justify-center hover:opacity-90 transition-all"
                     >
                       <span className={`font-['Schoolbell',sans-serif] text-[18px] ${bank.textColor}`}>{bank.name}</span>
                     </button>
