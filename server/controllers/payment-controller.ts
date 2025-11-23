@@ -5,7 +5,6 @@ import { getDonationData } from '../services/donation-service';
 import { fetchPaymentMethods } from '../services/payment/payment-methods-service';
 import { handlePaymentNotification } from '../services/payment/payment-notify-service';
 import { decodePaymentToken } from '../services/payment/payment-return-service';
-import { getTotalDonationsCounter } from '../services/total-donations-counter-service';
 
 export function paymentReturnHandler(req: Request, res: Response) {
   const { orderToken } = req.query;
@@ -82,13 +81,3 @@ export const createOrder = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to create order' });
   }
 };
-
-export async function totalDonationsHandler(req: Request, res: Response) {
-  try {
-    const data = await getTotalDonationsCounter();
-    res.json(data);
-  } catch (err) {
-    console.error('totalDonationsHandler error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-}

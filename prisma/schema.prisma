@@ -44,12 +44,3 @@ model Donation {
 
   @@map("donations")
 }
-
-model TotalDonationsCounter {
-  id                Int      @id @default(autoincrement())
-  totalAmount       Float    @default(0) @db.Double
-  totalCount        Int      @default(0)
-  lastUpdated       DateTime @default(now()) @updatedAt
-
-  @@map("total_donations_counter")
-}

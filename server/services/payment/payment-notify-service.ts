@@ -1,6 +1,5 @@
 import jwt from 'jsonwebtoken';
 import { prisma } from '../../prisma';
-import { incrementTotalDonations } from '../total-donations-counter-service';
 
 export async function handlePaymentNotification(orderToken: string) {
   let secretKey = process.env.MONTONIO_SANDBOX_SECRET_KEY;
@@ -31,11 +30,8 @@ export async function handlePaymentNotification(orderToken: string) {
       },
     });
 
-    // Increment the total donations counter and goal's current amount for each newly paid donation
+    // Increment the goal's current amount for each newly paid donation
     for (const donation of donations) {
-      await incrementTotalDonations(donation.amount);
-
-      // Increment the goal's current amount
       await prisma.goal.update({
         where: { id: donation.goalID },
         data: {
