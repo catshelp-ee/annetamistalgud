@@ -4,6 +4,19 @@ A full-stack donation platform for Cats HELP rescue organization in Estonia. The
 
 **Live Site:** [www.catshelp.ee](https://www.catshelp.ee)
 
+## Origin Story
+
+This platform started from a beautiful Figma design by Anna-Liisa ([NGO Donation Campaign Landing Page](https://www.figma.com/make/dDaHmeK37Vk8BzYk0PpUnn/NGO-Donation-Campaign-Landing-Page)), which was converted to code using Figma Make's code generation feature.
+
+The generated React code provided the foundation with the hand-drawn aesthetic, progress bars, and donation form. Building on the existing backend infrastructure from 2024, we enhanced it into a modern full-stack application by:
+- Connecting the new frontend to the existing Express backend with Montonio integration
+- Creating an admin panel for managing fundraising goals dynamically
+- Adding real-time donation tracking and aggregation
+- Building GitHub Actions workflows for safe production deployments
+- Updating to latest Montonio Stargate API endpoints
+
+The result is a production-ready donation platform that combines beautiful design with robust payment processing, helping save hundreds of cats! 🐱💖
+
 ## Features
 
 - 💳 **Bank Payment Integration** - Montonio payment gateway supporting major Estonian banks (SEB, Swedbank, LHV, Luminor, Coop, Citadele, Revolut)
