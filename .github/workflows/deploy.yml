@@ -1,10 +1,12 @@
-name: CI/CD Pipeline
+name: Deploy (Legacy - Manual Only)
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type "deploy" to confirm'
+        required: true
+        default: ''
 
 jobs:
   build-and-deploy:
@@ -15,6 +17,14 @@ jobs:
       RELEASES_DIR: /data01/virt133730/domeenid/www.catshelp.ee/annetamistalgud/releases
 
     steps:
+      - name: ✅ Check confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirmation }}" != "deploy" ]; then
+            echo "❌ Deployment cancelled - confirmation not provided"
+            exit 1
+          fi
+          echo "✅ Confirmation received - proceeding with deployment"
+
       - name: 🧾 Checkout repository
         uses: actions/checkout@v3
 
