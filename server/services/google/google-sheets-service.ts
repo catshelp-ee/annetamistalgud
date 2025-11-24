@@ -14,12 +14,15 @@ export async function getHoiukoduAmount(refresh = false): Promise<number> {
   }
 
   try {
+    // Check if Google Sheets is initialized
+    const authService = GoogleAuthService.getInstance();
+
     const sheets = google.sheets({
       version: 'v4',
-      auth: GoogleAuthService.getInstance().getAuth(),
+      auth: authService.getAuth(),
     });
     const data = await sheets.spreadsheets.get({
-      auth: GoogleAuthService.getInstance().getAuth(),
+      auth: authService.getAuth(),
       spreadsheetId: process.env.SHEETS_ID,
       ranges: ['Sheet1'],
       includeGridData: true,
@@ -50,10 +53,16 @@ export async function getHoiukoduAmount(refresh = false): Promise<number> {
       });
     }
 
-    return sheetsData.find(goal => goal.type === 'hoiukodu')!.amountDonated;
+    const amount = sheetsData.find(goal => goal.type === 'hoiukodu')?.amountDonated || 0;
+    cachedData = amount;
+    lastCacheTimestamp = now;
+    return amount;
   } catch (err) {
+    if (err instanceof Error && err.message.includes('not been initialized')) {
+      // Google Sheets not available (development mode without credentials)
+      return cachedData || 0;
+    }
     console.error('Google Sheets fetch failed:', err);
+    return cachedData || 0;
   }
-
-  return 0;
 }

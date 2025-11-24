@@ -48,12 +48,9 @@ export async function getDonationData(refreshCache = false): Promise<Goal[]> {
   // Fetch all goals
   const goals = await prisma.goal.findMany();
 
-  // Sum donations for each goal (only paid ones)
+  // Count donations for each goal (only paid ones)
   const donationsSummary = await prisma.donation.groupBy({
     by: ['goalID'],
-    _sum: {
-      amount: true,
-    },
     _count: {
       _all: true,
     },
@@ -67,13 +64,14 @@ export async function getDonationData(refreshCache = false): Promise<Goal[]> {
   for (const goal of goals) {
     let donation = donationsSummary.find(d => d.goalID === goal.id);
 
-    let amount = donation?._sum.amount;
+    let amount = goal.current;
     // Special case: "hoiukodu" goal pulls live data from Google Sheets
     if (goal.code.toLowerCase() === 'hoiukodu') {
       amount = await getHoiukoduAmount(refreshCache);
     }
     result.push({
-      amountDonated: amount ?? 0,
+      id: goal.id,
+      amountDonated: amount,
       donationGoal: goal.target,
       color: goal.color,
       name: goal.name,
@@ -87,4 +85,27 @@ export async function getDonationData(refreshCache = false): Promise<Goal[]> {
   }
 
   return result;
+}
+
+/**
+ * Get vet bills in format suitable for frontend
+ */
+export async function getVetBills() {
+  const goals = await prisma.goal.findMany({
+    where: {
+      code: {
+        not: 'hoiukodu' // Exclude special goals
+      }
+    },
+    orderBy: { id: 'asc' }
+  });
+
+  return goals.map(goal => ({
+    id: goal.id,
+    name: goal.name,
+    issue: goal.issue || '',
+    current: goal.current,
+    goal: goal.target,
+    color: goal.color
+  }));
 }

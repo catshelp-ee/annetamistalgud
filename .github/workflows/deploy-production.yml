@@ -1,0 +1,151 @@
+name: Deploy to Production (Montonio Live)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type "PRODUCTION" to confirm deployment with LIVE payments'
+        required: true
+        default: ''
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+
+    env:
+      APP_ROOT: /data01/virt133730/domeenid/www.catshelp.ee
+      RELEASES_DIR: /data01/virt133730/domeenid/www.catshelp.ee/annetamistalgud/releases
+      PM2_APP_NAME: annetamistalgud-production
+
+    steps:
+      - name: ✅ Check confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirmation }}" != "PRODUCTION" ]; then
+            echo "❌ Production deployment cancelled - you must type 'PRODUCTION' to confirm"
+            echo "⚠️  This deploys LIVE Montonio payments - ensure you have tested in sandbox first!"
+            exit 1
+          fi
+          echo "✅ Production deployment confirmed"
+          echo "🚀 Deploying with LIVE Montonio integration"
+
+      - name: 🧾 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 📦 Install dependencies
+        run: npm install
+
+      - name: 🔐 Create production environment file
+        run: |
+          cat > dist/.env.production << 'EOF'
+          # Database
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+
+          # JWT Authentication
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          ADMIN_PASSWORD_HASH=${{ secrets.ADMIN_PASSWORD_HASH }}
+
+          # Montonio Production (LIVE PAYMENTS)
+          MONTONIO_ACCESS_KEY=${{ secrets.MONTONIO_PRODUCTION_ACCESS_KEY }}
+          MONTONIO_SECRET_KEY=${{ secrets.MONTONIO_PRODUCTION_SECRET_KEY }}
+          MONTONIO_API_URL=https://stargate.montonio.com
+
+          # Application URLs
+          BASE_URL=https://www.catshelp.ee
+          NOTIFY_URL=https://www.catshelp.ee
+
+          # Google Sheets
+          SHEETS_ID=${{ secrets.SHEETS_ID }}
+          PROD_CREDENTIALS_PATH=${{ secrets.PROD_CREDENTIALS_PATH }}
+
+          # Node Environment
+          NODE_ENV=production
+          EOF
+          echo "✅ Production environment file created"
+
+      - name: 🏗️ Build frontend & backend
+        run: npm run build
+
+      - name: 🛠️ Prisma generate & copy
+        run: npm run copy:prisma
+
+      - name: 📁 Prepare release archive
+        run: |
+          TIMESTAMP=$(date +%Y.%m.%d-%H.%M.%S)
+          GIT_SHA=$(git rev-parse --short HEAD)
+          RELEASE_NAME=prod-$TIMESTAMP-$GIT_SHA
+          echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_ENV
+          tar -czf $RELEASE_NAME.tar.gz dist
+          echo "📦 Release archive created: $RELEASE_NAME.tar.gz"
+
+      - name: 📤 Upload release to server
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.CATSHELP_SSH_KEY }}
+          port: 22
+          source: "${{ env.RELEASE_NAME }}.tar.gz"
+          target: "${{ env.RELEASES_DIR }}"
+
+      - name: 🚀 Deploy and restart via PM2
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.CATSHELP_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+
+            cd ${{ env.RELEASES_DIR }}
+            mkdir -p ${{ env.RELEASE_NAME }}
+            tar -xzf ${{ env.RELEASE_NAME }}.tar.gz -C ${{ env.RELEASE_NAME }}
+            rm ${{ env.RELEASE_NAME }}.tar.gz
+
+            # Symlink new release to production directory
+            ln -sfn ${{ env.RELEASES_DIR }}/${{ env.RELEASE_NAME }}/dist ${{ env.APP_ROOT }}/annetamistalgud
+
+            # Copy Google Sheets credentials if they exist
+            if [ -f "${{ env.APP_ROOT }}/credentials.json" ]; then
+              cp ${{ env.APP_ROOT }}/credentials.json ${{ env.APP_ROOT }}/annetamistalgud/credentials.json
+              echo "✅ Google Sheets credentials copied"
+            fi
+
+            # Restart via PM2
+            cd ${{ env.APP_ROOT }}/annetamistalgud
+
+            # Load production environment
+            export NODE_ENV=production
+
+            # Start or restart the app
+            if pm2 describe ${{ env.PM2_APP_NAME }} > /dev/null 2>&1; then
+              pm2 restart ${{ env.PM2_APP_NAME }} --update-env
+              echo "🔄 PM2 app restarted: ${{ env.PM2_APP_NAME }}"
+            else
+              pm2 start bundle.cjs --name ${{ env.PM2_APP_NAME }} --node-args="--env-file=.env.production"
+              pm2 save
+              echo "🚀 PM2 app started: ${{ env.PM2_APP_NAME }}"
+            fi
+
+            # Cleanup old releases (keep last 5)
+            cd ${{ env.RELEASES_DIR }}
+            ls -t | grep "^prod-" | tail -n +6 | xargs -r rm -rf
+            echo "🧹 Cleaned up old releases"
+
+            echo "✅ Production deployment completed: ${{ env.RELEASE_NAME }}"
+            echo "🎉 Live at: https://www.catshelp.ee"
+            echo "⚠️  LIVE Montonio payments are now active!"
+
+      - name: 📊 Deployment Summary
+        run: |
+          echo "## 🎉 Production Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Release:** \`${{ env.RELEASE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Production (LIVE Montonio payments)" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** https://www.catshelp.ee" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployed:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ⚠️ Important" >> $GITHUB_STEP_SUMMARY
+          echo "- Live Montonio payments are now active" >> $GITHUB_STEP_SUMMARY
+          echo "- Monitor for any payment issues" >> $GITHUB_STEP_SUMMARY
+          echo "- Check PM2 logs: \`pm2 logs ${{ env.PM2_APP_NAME }}\`" >> $GITHUB_STEP_SUMMARY

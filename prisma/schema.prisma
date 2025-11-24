@@ -15,3 +15,32 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+model Goal {
+  id          Int        @id @default(autoincrement())
+  name        String     @db.Text
+  code        String     @db.Text
+  target      Float      @db.Double
+  current     Float      @default(0) @db.Double
+  color       String     @db.Text
+  unit        String     @default("€") @db.VarChar(10)
+  link        String     @default("#donation-section") @db.VarChar(500)
+  message     String     @default("Toeta") @db.VarChar(100)
+  description String     @db.Text
+  issue       String?    @db.Text
+  donations   Donation[]
+
+  @@map("goals")
+}
+
+model Donation {
+  id                        Int      @id @default(autoincrement())
+  goalID                    Int      @map("goal_id")
+  goal                      Goal     @relation(fields: [goalID], references: [id])
+  amount                    Float    @db.Double
+  montonioMerchantReference String   @db.Text
+  paid                      Boolean  @default(false)
+  date                      DateTime @default(now())
+
+  @@map("donations")
+}

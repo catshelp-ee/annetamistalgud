@@ -1,4 +1,5 @@
 export interface Goal {
+  id?: number;
   amountDonated: number;
   donationGoal: number;
   color: string;

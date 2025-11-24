@@ -12,6 +12,15 @@ export async function handlePaymentNotification(orderToken: string) {
   };
 
   if (decoded.paymentStatus === 'PAID') {
+    // Find the donation(s) that need to be marked as paid
+    const donations = await prisma.donation.findMany({
+      where: {
+        montonioMerchantReference: decoded.merchant_reference,
+        paid: false, // Only get unpaid donations to avoid double-counting
+      },
+    });
+
+    // Update the donations to paid
     await prisma.donation.updateMany({
       where: {
         montonioMerchantReference: decoded.merchant_reference,
@@ -20,5 +29,17 @@ export async function handlePaymentNotification(orderToken: string) {
         paid: true,
       },
     });
+
+    // Increment the goal's current amount for each newly paid donation
+    for (const donation of donations) {
+      await prisma.goal.update({
+        where: { id: donation.goalID },
+        data: {
+          current: {
+            increment: donation.amount
+          }
+        }
+      });
+    }
   }
 }

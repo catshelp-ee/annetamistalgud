@@ -1,0 +1,218 @@
+name: Database Migration (Prisma)
+
+on:
+  workflow_dispatch:
+    inputs:
+      migration_type:
+        description: 'Migration type'
+        required: true
+        type: choice
+        options:
+          - deploy
+          - reset
+        default: 'deploy'
+      confirmation:
+        description: 'Type "MIGRATE" to deploy schema, or "RESET-DATABASE" to reset with data loss'
+        required: true
+        default: ''
+      backup_first:
+        description: 'Create database backup before migration?'
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  database-migration:
+    runs-on: ubuntu-latest
+
+    env:
+      APP_ROOT: /data01/virt133730/domeenid/www.catshelp.ee
+
+    steps:
+      - name: ✅ Validate migration type and confirmation
+        run: |
+          MIGRATION_TYPE="${{ github.event.inputs.migration_type }}"
+          CONFIRMATION="${{ github.event.inputs.confirmation }}"
+
+          if [ "$MIGRATION_TYPE" = "deploy" ]; then
+            if [ "$CONFIRMATION" != "MIGRATE" ]; then
+              echo "❌ Migration cancelled - you must type 'MIGRATE' to confirm schema deployment"
+              exit 1
+            fi
+            echo "✅ Schema deployment (prisma migrate deploy) confirmed"
+            echo "📊 This will apply pending migrations without data loss"
+          elif [ "$MIGRATION_TYPE" = "reset" ]; then
+            if [ "$CONFIRMATION" != "RESET-DATABASE" ]; then
+              echo "❌ Database reset cancelled - you must type 'RESET-DATABASE' to confirm"
+              exit 1
+            fi
+            echo "⚠️  DATABASE RESET CONFIRMED - THIS WILL DELETE ALL DATA!"
+            echo "🔥 This will drop the database and recreate it from scratch"
+          fi
+
+      - name: 🧾 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 📦 Install dependencies
+        run: npm install
+
+      - name: 🛠️ Generate Prisma client
+        run: npx prisma generate
+
+      - name: 📤 Upload Prisma files to server
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.CATSHELP_SSH_KEY }}
+          port: 22
+          source: "prisma"
+          target: "/tmp/prisma-migration-${{ github.run_number }}"
+
+      - name: 🗄️ Backup database (if enabled)
+        if: github.event.inputs.backup_first == 'true'
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.CATSHELP_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+
+            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+            BACKUP_DIR="${{ env.APP_ROOT }}/database-backups"
+            mkdir -p $BACKUP_DIR
+
+            # Extract database credentials from DATABASE_URL
+            DB_URL="${{ secrets.DATABASE_URL }}"
+            DB_USER=$(echo $DB_URL | sed -n 's/.*:\/\/\([^:]*\):.*/\1/p')
+            DB_PASS=$(echo $DB_URL | sed -n 's/.*:\/\/[^:]*:\([^@]*\)@.*/\1/p')
+            DB_HOST=$(echo $DB_URL | sed -n 's/.*@\([^:]*\):.*/\1/p')
+            DB_NAME=$(echo $DB_URL | sed -n 's/.*\/\([^?]*\).*/\1/p')
+
+            echo "📦 Creating database backup: $DB_NAME-$TIMESTAMP.sql"
+            mysqldump -h $DB_HOST -u $DB_USER -p$DB_PASS $DB_NAME > $BACKUP_DIR/$DB_NAME-$TIMESTAMP.sql
+
+            # Keep only last 10 backups
+            cd $BACKUP_DIR
+            ls -t *.sql | tail -n +11 | xargs -r rm
+
+            echo "✅ Database backup created successfully"
+            echo "📁 Backup location: $BACKUP_DIR/$DB_NAME-$TIMESTAMP.sql"
+
+      - name: 🚀 Run Prisma Migration (Deploy)
+        if: github.event.inputs.migration_type == 'deploy'
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.CATSHELP_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+
+            # Navigate to the migration directory
+            cd /tmp/prisma-migration-${{ github.run_number }}
+
+            # Set DATABASE_URL environment variable
+            export DATABASE_URL="${{ secrets.DATABASE_URL }}"
+
+            echo "🔄 Running Prisma migrate deploy..."
+            npx prisma migrate deploy
+
+            echo "✅ Prisma migrations applied successfully"
+            echo "📊 Database schema is now up to date"
+
+            # Cleanup
+            cd /tmp
+            rm -rf prisma-migration-${{ github.run_number }}
+
+      - name: 🔥 Run Prisma Migration (Reset - DESTRUCTIVE)
+        if: github.event.inputs.migration_type == 'reset'
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.CATSHELP_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+
+            # Navigate to the migration directory
+            cd /tmp/prisma-migration-${{ github.run_number }}
+
+            # Set DATABASE_URL environment variable
+            export DATABASE_URL="${{ secrets.DATABASE_URL }}"
+
+            echo "⚠️  WARNING: Resetting database - ALL DATA WILL BE LOST!"
+            echo "🔥 Running Prisma migrate reset..."
+
+            # Reset database (drops and recreates)
+            npx prisma migrate reset --force --skip-seed
+
+            echo "✅ Database reset completed"
+            echo "🗑️  All data has been deleted"
+            echo "📊 Database schema recreated from migrations"
+
+            # Cleanup
+            cd /tmp
+            rm -rf prisma-migration-${{ github.run_number }}
+
+      - name: 🔄 Restart applications to reload schema
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.CATSHELP_SSH_KEY }}
+          port: 22
+          script: |
+            echo "🔄 Restarting PM2 applications..."
+
+            # Restart production app if running
+            if pm2 describe annetamistalgud-production > /dev/null 2>&1; then
+              pm2 restart annetamistalgud-production
+              echo "✅ Restarted: annetamistalgud-production"
+            fi
+
+            # Restart sandbox app if running
+            if pm2 describe annetamistalgud-sandbox > /dev/null 2>&1; then
+              pm2 restart annetamistalgud-sandbox
+              echo "✅ Restarted: annetamistalgud-sandbox"
+            fi
+
+            echo "✅ All applications restarted"
+
+      - name: 📊 Migration Summary
+        run: |
+          MIGRATION_TYPE="${{ github.event.inputs.migration_type }}"
+
+          if [ "$MIGRATION_TYPE" = "deploy" ]; then
+            echo "## ✅ Database Migration Completed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Migration Type:** Deploy (Safe)" >> $GITHUB_STEP_SUMMARY
+            echo "**Backup Created:** ${{ github.event.inputs.backup_first }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Completed:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ℹ️ What Happened" >> $GITHUB_STEP_SUMMARY
+            echo "- Applied pending Prisma migrations" >> $GITHUB_STEP_SUMMARY
+            echo "- Database schema updated" >> $GITHUB_STEP_SUMMARY
+            echo "- No data was lost" >> $GITHUB_STEP_SUMMARY
+            echo "- Applications restarted" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## 🔥 Database Reset Completed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Migration Type:** Reset (DESTRUCTIVE)" >> $GITHUB_STEP_SUMMARY
+            echo "**Backup Created:** ${{ github.event.inputs.backup_first }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Completed:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ⚠️ What Happened" >> $GITHUB_STEP_SUMMARY
+            echo "- Database was completely reset" >> $GITHUB_STEP_SUMMARY
+            echo "- **ALL DATA WAS DELETED**" >> $GITHUB_STEP_SUMMARY
+            echo "- Schema recreated from migrations" >> $GITHUB_STEP_SUMMARY
+            echo "- Applications restarted" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🔧 Next Steps" >> $GITHUB_STEP_SUMMARY
+            echo "- Restore from backup if needed" >> $GITHUB_STEP_SUMMARY
+            echo "- Re-seed database with initial data" >> $GITHUB_STEP_SUMMARY
+          fi
