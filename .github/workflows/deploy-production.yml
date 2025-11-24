@@ -34,34 +34,6 @@ jobs:
       - name: 📦 Install dependencies
         run: npm install
 
-      - name: 🔐 Create production environment file
-        run: |
-          cat > dist/.env.production << 'EOF'
-          # Database
-          DATABASE_URL=${{ secrets.DATABASE_URL }}
-
-          # JWT Authentication
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          ADMIN_PASSWORD_HASH=${{ secrets.ADMIN_PASSWORD_HASH }}
-
-          # Montonio Production (LIVE PAYMENTS)
-          MONTONIO_ACCESS_KEY=${{ secrets.MONTONIO_PRODUCTION_ACCESS_KEY }}
-          MONTONIO_SECRET_KEY=${{ secrets.MONTONIO_PRODUCTION_SECRET_KEY }}
-          MONTONIO_API_URL=https://stargate.montonio.com
-
-          # Application URLs
-          BASE_URL=https://www.catshelp.ee
-          NOTIFY_URL=https://www.catshelp.ee
-
-          # Google Sheets
-          SHEETS_ID=${{ secrets.SHEETS_ID }}
-          PROD_CREDENTIALS_PATH=${{ secrets.PROD_CREDENTIALS_PATH }}
-
-          # Node Environment
-          NODE_ENV=production
-          EOF
-          echo "✅ Production environment file created"
-
       - name: 🏗️ Build frontend & backend
         run: npm run build
 
@@ -111,21 +83,12 @@ jobs:
               echo "✅ Google Sheets credentials copied"
             fi
 
-            # Restart via PM2
+            # Restart via PM2 using server-side pm2.config.js
             cd ${{ env.APP_ROOT }}/annetamistalgud
 
-            # Load production environment
-            export NODE_ENV=production
-
-            # Start or restart the app
-            if pm2 describe ${{ env.PM2_APP_NAME }} > /dev/null 2>&1; then
-              pm2 restart ${{ env.PM2_APP_NAME }} --update-env
-              echo "🔄 PM2 app restarted: ${{ env.PM2_APP_NAME }}"
-            else
-              pm2 start bundle.cjs --name ${{ env.PM2_APP_NAME }} --node-args="--env-file=.env.production"
-              pm2 save
-              echo "🚀 PM2 app started: ${{ env.PM2_APP_NAME }}"
-            fi
+            # Use the same pm2.config.js approach as original deploy.yml
+            pm2 startOrRestart ${{ env.APP_ROOT }}/annetamistalgud/pm2.config.js
+            echo "✅ PM2 app started/restarted: ${{ env.PM2_APP_NAME }}"
 
             # Cleanup old releases (keep last 5)
             cd ${{ env.RELEASES_DIR }}

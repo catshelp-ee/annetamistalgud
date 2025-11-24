@@ -84,12 +84,21 @@ jobs:
             BACKUP_DIR="${{ env.APP_ROOT }}/database-backups"
             mkdir -p $BACKUP_DIR
 
+            # Source DATABASE_URL from server-side .env file
+            if [ -f "${{ env.APP_ROOT }}/annetamistalgud/.env" ]; then
+              source ${{ env.APP_ROOT }}/annetamistalgud/.env
+            elif [ -f "${{ env.APP_ROOT }}/.env" ]; then
+              source ${{ env.APP_ROOT }}/.env
+            else
+              echo "❌ Error: No .env file found on server"
+              exit 1
+            fi
+
             # Extract database credentials from DATABASE_URL
-            DB_URL="${{ secrets.DATABASE_URL }}"
-            DB_USER=$(echo $DB_URL | sed -n 's/.*:\/\/\([^:]*\):.*/\1/p')
-            DB_PASS=$(echo $DB_URL | sed -n 's/.*:\/\/[^:]*:\([^@]*\)@.*/\1/p')
-            DB_HOST=$(echo $DB_URL | sed -n 's/.*@\([^:]*\):.*/\1/p')
-            DB_NAME=$(echo $DB_URL | sed -n 's/.*\/\([^?]*\).*/\1/p')
+            DB_USER=$(echo $DATABASE_URL | sed -n 's/.*:\/\/\([^:]*\):.*/\1/p')
+            DB_PASS=$(echo $DATABASE_URL | sed -n 's/.*:\/\/[^:]*:\([^@]*\)@.*/\1/p')
+            DB_HOST=$(echo $DATABASE_URL | sed -n 's/.*@\([^:]*\):.*/\1/p')
+            DB_NAME=$(echo $DATABASE_URL | sed -n 's/.*\/\([^?]*\).*/\1/p')
 
             echo "📦 Creating database backup: $DB_NAME-$TIMESTAMP.sql"
             mysqldump -h $DB_HOST -u $DB_USER -p$DB_PASS $DB_NAME > $BACKUP_DIR/$DB_NAME-$TIMESTAMP.sql
@@ -115,8 +124,15 @@ jobs:
             # Navigate to the migration directory
             cd /tmp/prisma-migration-${{ github.run_number }}
 
-            # Set DATABASE_URL environment variable
-            export DATABASE_URL="${{ secrets.DATABASE_URL }}"
+            # Source DATABASE_URL from server-side .env file
+            if [ -f "${{ env.APP_ROOT }}/annetamistalgud/.env" ]; then
+              export $(grep -v '^#' ${{ env.APP_ROOT }}/annetamistalgud/.env | xargs)
+            elif [ -f "${{ env.APP_ROOT }}/.env" ]; then
+              export $(grep -v '^#' ${{ env.APP_ROOT }}/.env | xargs)
+            else
+              echo "❌ Error: No .env file found on server"
+              exit 1
+            fi
 
             echo "🔄 Running Prisma migrate deploy..."
             npx prisma@6.19.0 migrate deploy
@@ -142,8 +158,15 @@ jobs:
             # Navigate to the migration directory
             cd /tmp/prisma-migration-${{ github.run_number }}
 
-            # Set DATABASE_URL environment variable
-            export DATABASE_URL="${{ secrets.DATABASE_URL }}"
+            # Source DATABASE_URL from server-side .env file
+            if [ -f "${{ env.APP_ROOT }}/annetamistalgud/.env" ]; then
+              export $(grep -v '^#' ${{ env.APP_ROOT }}/annetamistalgud/.env | xargs)
+            elif [ -f "${{ env.APP_ROOT }}/.env" ]; then
+              export $(grep -v '^#' ${{ env.APP_ROOT }}/.env | xargs)
+            else
+              echo "❌ Error: No .env file found on server"
+              exit 1
+            fi
 
             echo "⚠️  WARNING: Resetting database - ALL DATA WILL BE LOST!"
             echo "🔥 Running Prisma migrate reset..."
