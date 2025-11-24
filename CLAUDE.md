@@ -149,16 +149,16 @@ DATABASE_URL=mysql://user:pass@host:3306/database
 # Montonio Sandbox (development)
 MONTONIO_SANDBOX_ACCESS_KEY=...
 MONTONIO_SANDBOX_SECRET_KEY=...
-MONTONIO_SANDBOX_API_URL=https://sandbox-api.montonio.com
+MONTONIO_SANDBOX_API_URL=https://sandbox-stargate.montonio.com
 
 # Montonio Production
 MONTONIO_ACCESS_KEY=...
 MONTONIO_SECRET_KEY=...
-MONTONIO_API_URL=https://api.montonio.com
+MONTONIO_API_URL=https://stargate.montonio.com
 
 # URLs
 BASE_URL=http://localhost:5173      # Frontend URL for payment returns
-NOTIFY_URL=http://localhost:3000    # Backend URL for webhooks
+NOTIFY_URL=https://your-ngrok-url.ngrok-free.app    # Backend URL for webhooks (must be publicly accessible)
 
 # Google Sheets
 SHEETS_ID=<Google Sheet ID>
@@ -200,9 +200,13 @@ VITE_MONTONIO_ACCESS_KEY=...  # For Montonio checkout embed
 
 ### Testing Payments Locally
 1. Ensure `NODE_ENV !== 'production'` to use sandbox
-2. Set `MONTONIO_SANDBOX_*` environment variables
-3. Use Montonio sandbox credentials
-4. Test banks available in sandbox environment
+2. Set `MONTONIO_SANDBOX_*` environment variables with correct Stargate API URLs
+3. Set up ngrok or similar tunnel for webhooks: `ngrok http 3000`
+4. Update `NOTIFY_URL` in `.env` with the ngrok HTTPS URL
+5. Use Montonio sandbox credentials
+6. Test banks available in sandbox environment
+
+**Important:** Montonio webhooks require a publicly accessible HTTPS URL. Localhost URLs will be rejected with a 400 error. The code automatically uses a dummy URL for localhost, but webhooks won't update your database unless you use ngrok.
 
 ### Database Changes
 1. Edit `prisma/models/*.prisma` files
@@ -224,9 +228,14 @@ VITE_MONTONIO_ACCESS_KEY=...  # For Montonio checkout embed
 - Binary targets include `debian-openssl-1.1.x` for Linux deployment
 
 **Montonio Integration:**
+- API Endpoint: `POST /api/orders` (not `/orders`)
+- Base URLs: `https://sandbox-stargate.montonio.com` (sandbox), `https://stargate.montonio.com` (production)
+- Webhook URL must be publicly accessible HTTPS (no localhost in production/sandbox)
 - Checkout script loaded dynamically at runtime
 - Window interface extended for TypeScript: `declare global interface Window`
 - `storeSetupData` must be JSON stringified for checkout config
+- JWT-signed requests with HS256 algorithm
+- Error responses include detailed validation messages (e.g., "notificationUrl must be a valid non-local URL")
 
 **Google Sheets Structure:**
 - Expected columns: 0 = type, 1 = amountDonated, 2 = donationGoal
