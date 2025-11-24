@@ -119,7 +119,7 @@ jobs:
             export DATABASE_URL="${{ secrets.DATABASE_URL }}"
 
             echo "🔄 Running Prisma migrate deploy..."
-            npx prisma migrate deploy
+            npx prisma@6.19.0 migrate deploy
 
             echo "✅ Prisma migrations applied successfully"
             echo "📊 Database schema is now up to date"
@@ -149,7 +149,7 @@ jobs:
             echo "🔥 Running Prisma migrate reset..."
 
             # Reset database (drops and recreates)
-            npx prisma migrate reset --force --skip-seed
+            npx prisma@6.19.0 migrate reset --force
 
             echo "✅ Database reset completed"
             echo "🗑️  All data has been deleted"
