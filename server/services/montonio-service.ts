@@ -27,11 +27,18 @@ export const createMontonioOrder = async ({
     secretKey = process.env.MONTONIO_SECRET_KEY;
     url = process.env.MONTONIO_API_URL;
   }
+  // Use a dummy webhook URL for local development if NOTIFY_URL is localhost
+  const notifyUrl = process.env.NOTIFY_URL || '';
+  const isLocalhost = notifyUrl.includes('localhost') || notifyUrl.includes('127.0.0.1');
+  const notificationUrl = isLocalhost
+    ? 'https://webhook.site/00000000-0000-0000-0000-000000000000' // Dummy URL for local dev
+    : `${notifyUrl}/api/paymentNotify`;
+
   const payload = {
     accessKey: accessKey,
     merchantReference,
     returnUrl: `${process.env.BASE_URL}/payment-return`,
-    notificationUrl: `${process.env.NOTIFY_URL}/api/paymentNotify`,
+    notificationUrl,
     grandTotal: donationTotal,
     currency: 'EUR',
     locale: 'et',
@@ -53,11 +60,16 @@ export const createMontonioOrder = async ({
   });
 
   try {
-    const response = await axios.post(`${url}/orders`, {
+    const response = await axios.post(`${url}/api/orders`, {
       data: token,
     });
     return { paymentUrl: response.data.paymentUrl, merchantReference };
   } catch (error) {
     console.error('Montonio Error:\n', error);
+    if (axios.isAxiosError(error) && error.response) {
+      console.error('Montonio Response Status:', error.response.status);
+      console.error('Montonio Response Data:', JSON.stringify(error.response.data, null, 2));
+    }
+    throw new Error(`Failed to create Montonio order: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };

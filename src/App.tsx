@@ -400,7 +400,7 @@ export default function App() {
                     key={amount}
                     onClick={() => {
                       setSelectedAmount(amount);
-                      setCustomAmount("");
+                      setCustomAmount(amount.toString());
                     }}
                     className={`font-['Schoolbell',sans-serif] text-[25px] md:text-[28px] h-[70px] rounded-[247px] border-2 transition-all text-center ${
                       selectedAmount === amount
