@@ -16,6 +16,7 @@ jobs:
       APP_ROOT: /data01/virt133730/domeenid/www.catshelp.ee
       RELEASES_DIR: /data01/virt133730/domeenid/www.catshelp.ee/annetamistalgud/releases
       PM2_APP_NAME: annetamistalgud-sandbox
+      NODE_ENV: development
 
     steps:
       - name: ✅ Check confirmation
@@ -86,9 +87,16 @@ jobs:
             # Restart via PM2 using server-side pm2.config.js
             cd ${{ env.APP_ROOT }}/annetamistalgud-sandbox/current
 
-            # Start or restart the app using pm2.config.js from server
+            # Stop production app if running (since we can only run one at a time)
+            if pm2 describe annetamistalgud-production > /dev/null 2>&1; then
+              pm2 stop annetamistalgud-production
+              pm2 delete annetamistalgud-production
+              echo "🛑 Stopped production app"
+            fi
+
+            # Start or restart the sandbox app using pm2.config.js from server
             if pm2 describe ${{ env.PM2_APP_NAME }} > /dev/null 2>&1; then
-              pm2 restart ${{ env.PM2_APP_NAME }}
+              pm2 restart ${{ env.PM2_APP_NAME }} --update-env
               echo "🔄 PM2 app restarted: ${{ env.PM2_APP_NAME }}"
             else
               # First deployment - use pm2.config.js if it exists on server
