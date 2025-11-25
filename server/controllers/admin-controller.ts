@@ -3,10 +3,20 @@ import { prisma } from '../prisma';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-// Default password hash for 'catshelp2024'
+// TEMPORARY: Development defaults - REMOVE when production secrets are configured
+const JWT_SECRET = process.env.JWT_SECRET || 'temp-dev-jwt-secret-change-in-production';
+// Hash for password: 'testadmin123' (bcrypt generated)
 const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH ||
-  '$2b$10$rKZVx4qP4fqJ8yJ9pHJ6YOYZxX6qJ8yJ9pHJ6YOYZxX6qJ8yJ9pH'; // This is just a placeholder
+  '$2b$10$gppOxe2lhJneKdgQJiuBjOHAhC2ZCilXAQEoNK5tZqb6DlLRUlYKi';
+
+// Warn if using fallback credentials
+if (!process.env.JWT_SECRET || !process.env.ADMIN_PASSWORD_HASH) {
+  console.warn('⚠️  WARNING: Using temporary development credentials!');
+  console.warn('⚠️  Set JWT_SECRET and ADMIN_PASSWORD_HASH in production .env');
+  if (!process.env.ADMIN_PASSWORD_HASH) {
+    console.warn('⚠️  Default admin password: testadmin123');
+  }
+}
 
 export async function loginHandler(req: Request, res: Response) {
   const { password } = req.body;
