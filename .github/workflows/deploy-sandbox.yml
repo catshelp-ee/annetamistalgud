@@ -74,18 +74,17 @@ jobs:
             tar -xzf ${{ env.RELEASE_NAME }}.tar.gz -C ${{ env.RELEASE_NAME }}
             rm ${{ env.RELEASE_NAME }}.tar.gz
 
-            # Symlink new release to sandbox directory
-            mkdir -p ${{ env.APP_ROOT }}/annetamistalgud-sandbox
-            ln -sfn ${{ env.RELEASES_DIR }}/${{ env.RELEASE_NAME }}/dist ${{ env.APP_ROOT }}/annetamistalgud-sandbox/current
+            # Symlink new release to current
+            ln -sfn ${{ env.RELEASES_DIR }}/${{ env.RELEASE_NAME }}/dist ${{ env.APP_ROOT }}/annetamistalgud
 
             # Copy Google Sheets credentials if they exist
             if [ -f "${{ env.APP_ROOT }}/credentials.json" ]; then
-              cp ${{ env.APP_ROOT }}/credentials.json ${{ env.APP_ROOT }}/annetamistalgud-sandbox/current/credentials.json
+              cp ${{ env.APP_ROOT }}/credentials.json ${{ env.APP_ROOT }}/annetamistalgud/credentials.json
               echo "✅ Google Sheets credentials copied"
             fi
 
             # Restart via PM2 using server-side pm2.config.js
-            cd ${{ env.APP_ROOT }}/annetamistalgud-sandbox/current
+            cd ${{ env.APP_ROOT }}/annetamistalgud
 
             # Stop production app if running (since we can only run one at a time)
             if pm2 describe annetamistalgud-production > /dev/null 2>&1; then
