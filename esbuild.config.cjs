@@ -16,7 +16,7 @@ esbuild
     platform: 'node',
     format: 'cjs',
     target: 'node20',
-    outfile: 'dist/bundle.cjs',
+    outfile: path.resolve(__dirname, 'dist/bundle.cjs'),
     external: [
       '@prisma/client',
       '*.node',
