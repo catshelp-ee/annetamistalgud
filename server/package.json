@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "commonjs",
   "scripts": {
-    "bundle": "node ../old_donations_page/esbuild.config.cjs",
+    "bundle": "node ../esbuild.config.cjs",
     "serve": "npm run build && node dist/main.js"
   },
   "prisma": {
