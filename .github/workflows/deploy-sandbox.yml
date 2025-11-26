@@ -84,7 +84,7 @@ jobs:
             fi
 
             # Restart via PM2 (expects ecosystem config in release)
-            cd ${{ env.APP_ROOT }}/annetamistalgud
+            cd ${{ env.APP_ROOT }}/annetamistalgud/dist
             pm2 startOrRestart ${{ env.APP_ROOT }}/annetamistalgud/pm2.config.js --only ${{ env.PM2_APP_NAME }}
 
             # Cleanup old sandbox releases (keep last 3)
