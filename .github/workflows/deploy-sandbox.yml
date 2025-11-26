@@ -83,30 +83,9 @@ jobs:
               echo "✅ Google Sheets credentials copied"
             fi
 
-            # Restart via PM2 using server-side pm2.config.js
+            # Restart via PM2 (expects ecosystem config in release)
             cd ${{ env.APP_ROOT }}/annetamistalgud
-
-            # Stop production app if running (since we can only run one at a time)
-            if pm2 describe annetamistalgud-production > /dev/null 2>&1; then
-              pm2 stop annetamistalgud-production
-              pm2 delete annetamistalgud-production
-              echo "🛑 Stopped production app"
-            fi
-
-            # Start or restart the sandbox app using pm2.config.js from server
-            if pm2 describe ${{ env.PM2_APP_NAME }} > /dev/null 2>&1; then
-              pm2 restart ${{ env.PM2_APP_NAME }} --update-env
-              echo "🔄 PM2 app restarted: ${{ env.PM2_APP_NAME }}"
-            else
-              # First deployment - use pm2.config.js if it exists on server
-              if [ -f "${{ env.APP_ROOT }}/annetamistalgud/pm2.config.js" ]; then
-                pm2 start ${{ env.APP_ROOT }}/annetamistalgud/pm2.config.js --only ${{ env.PM2_APP_NAME }}
-              else
-                pm2 start bundle.cjs --name ${{ env.PM2_APP_NAME }}
-              fi
-              pm2 save
-              echo "🚀 PM2 app started: ${{ env.PM2_APP_NAME }}"
-            fi
+            pm2 startOrRestart ${{ env.APP_ROOT }}/annetamistalgud/pm2.config.js --only ${{ env.PM2_APP_NAME }}
 
             # Cleanup old sandbox releases (keep last 3)
             cd ${{ env.RELEASES_DIR }}
