@@ -1,19 +1,16 @@
 import { Request, Response } from 'express';
 import { prisma } from '../prisma';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
 
 // TEMPORARY: Development defaults - REMOVE when production secrets are configured
 const JWT_SECRET = process.env.JWT_SECRET || 'temp-dev-jwt-secret-change-in-production';
-// Hash for password: 'testadmin123' (bcrypt generated)
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH ||
-  '$2b$10$gppOxe2lhJneKdgQJiuBjOHAhC2ZCilXAQEoNK5tZqb6DlLRUlYKi';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'testadmin123';
 
 // Warn if using fallback credentials
-if (!process.env.JWT_SECRET || !process.env.ADMIN_PASSWORD_HASH) {
+if (!process.env.JWT_SECRET || !process.env.ADMIN_PASSWORD) {
   console.warn('⚠️  WARNING: Using temporary development credentials!');
-  console.warn('⚠️  Set JWT_SECRET and ADMIN_PASSWORD_HASH in production .env');
-  if (!process.env.ADMIN_PASSWORD_HASH) {
+  console.warn('⚠️  Set JWT_SECRET and ADMIN_PASSWORD in production .env');
+  if (!process.env.ADMIN_PASSWORD) {
     console.warn('⚠️  Default admin password: testadmin123');
   }
 }
@@ -27,7 +24,7 @@ export async function loginHandler(req: Request, res: Response) {
 
   try {
     console.log('Login attempt - JWT_SECRET:', JWT_SECRET?.substring(0, 10) + '...');
-    const isValid = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+    const isValid = password === ADMIN_PASSWORD;
 
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid password' });
