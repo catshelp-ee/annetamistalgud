@@ -87,10 +87,11 @@ jobs:
             cd ${{ env.APP_ROOT }}/annetamistalgud/dist
             pm2 startOrRestart ${{ env.APP_ROOT }}/annetamistalgud/pm2.config.js --only ${{ env.PM2_APP_NAME }}
 
+            # TODO: Add cleanup step once pipeline works flawlessly
             # Cleanup old sandbox releases (keep last 3)
-            cd ${{ env.RELEASES_DIR }}
-            ls -t | grep "^sandbox-" | tail -n +4 | xargs -r rm -rf
-            echo "🧹 Cleaned up old sandbox releases"
+            # cd ${{ env.RELEASES_DIR }}
+            # ls -t | grep "^sandbox-" | tail -n +4 | xargs -r rm -rf
+            # echo "🧹 Cleaned up old sandbox releases"
 
             echo "✅ Sandbox deployment completed: ${{ env.RELEASE_NAME }}"
             echo "🧪 Test at: https://test.catshelp.ee"

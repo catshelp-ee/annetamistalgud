@@ -88,10 +88,11 @@ jobs:
             cd ${{ env.APP_ROOT }}/annetamistalgud/dist
             pm2 startOrRestart ${{ env.APP_ROOT }}/annetamistalgud/pm2.config.js --only ${{ env.PM2_APP_NAME }}
 
+            # TODO: Add cleanup step once pipeline works flawlessly
             # Cleanup old releases (keep last 5)
-            cd ${{ env.RELEASES_DIR }}
-            ls -t | grep "^prod-" | tail -n +6 | xargs -r rm -rf
-            echo "🧹 Cleaned up old releases"
+            # cd ${{ env.RELEASES_DIR }}
+            # ls -t | grep "^prod-" | tail -n +6 | xargs -r rm -rf
+            # echo "🧹 Cleaned up old releases"
 
             echo "✅ Production deployment completed: ${{ env.RELEASE_NAME }}"
             echo "🎉 Live at: https://www.catshelp.ee"
