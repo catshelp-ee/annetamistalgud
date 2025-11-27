@@ -23,9 +23,9 @@ model Goal {
   target      Float      @db.Double
   current     Float      @default(0) @db.Double
   color       String     @db.Text
-  unit        String     @default("€") @db.VarChar(10)
+  unit        String     @default("€") @db.VarChar(191)
   link        String     @default("#donation-section") @db.VarChar(500)
-  message     String     @default("Toeta") @db.VarChar(100)
+  message     String     @default("Toeta") @db.VarChar(191)
   description String     @db.Text
   issue       String?    @db.Text
   donations   Donation[]
