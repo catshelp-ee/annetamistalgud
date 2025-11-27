@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `goals` ADD COLUMN `current` DOUBLE NOT NULL DEFAULT 0;
