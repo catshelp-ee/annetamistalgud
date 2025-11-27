@@ -23,7 +23,12 @@ export async function loginHandler(req: Request, res: Response) {
   }
 
   try {
-    console.log('Login attempt - JWT_SECRET:', JWT_SECRET?.substring(0, 10) + '...');
+    console.log('Login attempt:');
+    console.log('  - Received password length:', password?.length);
+    console.log('  - Expected password length:', ADMIN_PASSWORD?.length);
+    console.log('  - Received password:', JSON.stringify(password));
+    console.log('  - Expected password:', JSON.stringify(ADMIN_PASSWORD));
+    console.log('  - Are they equal?:', password === ADMIN_PASSWORD);
     const isValid = password === ADMIN_PASSWORD;
 
     if (!isValid) {
