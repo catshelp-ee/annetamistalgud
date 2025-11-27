@@ -69,6 +69,6 @@
             "dev:api": "nodemon --watch server --ext ts,tsx --exec 'tsx --env-file=.env server/main.ts'",
             "dev:vite": "vite",
             "build": "vite build && npm run bundle --prefix ./server",
-            "copy:prisma": "npx prisma generate && rm -rf dist/prisma dist/generated && cp -r prisma dist/prisma && cp -r generated dist/generated && cp generated/prisma/*.node dist/"
+            "copy:prisma": "npx prisma generate && rm -rf dist/prisma dist/generated && cp -r prisma dist/prisma && cp -r generated dist/generated && mkdir -p dist/dist && cp generated/prisma/*.node dist/dist/"
       }
 }
