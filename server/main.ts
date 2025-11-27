@@ -27,8 +27,8 @@ import GoogleAuthService from './services/google/google-auth-service';
   app.get('/api/admin/verify', authenticateAdmin, AdminController.verifyHandler);
   app.get('/api/admin/goals', authenticateAdmin, AdminController.listGoalsHandler);
   app.post('/api/admin/goals', authenticateAdmin, AdminController.createGoalHandler);
-  app.put('/api/admin/goals/:id', authenticateAdmin, AdminController.updateGoalHandler);
-  app.delete('/api/admin/goals/:id', authenticateAdmin, AdminController.deleteGoalHandler);
+  app.post('/api/admin/goals/:id/update', authenticateAdmin, AdminController.updateGoalHandler);
+  app.post('/api/admin/goals/:id/delete', authenticateAdmin, AdminController.deleteGoalHandler);
 
   app.get('/{*all}', (req, res) => {
     res.sendFile(path.join(rootDir, 'dist', 'index.html'));

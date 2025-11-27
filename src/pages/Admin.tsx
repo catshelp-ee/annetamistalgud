@@ -180,8 +180,8 @@ export default function Admin() {
 
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/goals/${bill.id}`, {
-        method: 'PUT',
+      const response = await fetch(`/api/admin/goals/${bill.id}/update`, {
+        method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify(bill)
       });
@@ -215,8 +215,8 @@ export default function Admin() {
 
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/goals/${bill.id}`, {
-        method: 'DELETE',
+      const response = await fetch(`/api/admin/goals/${bill.id}/delete`, {
+        method: 'POST',
         headers: apiHeaders()
       });
 
