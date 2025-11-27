@@ -66,7 +66,7 @@
       },
       "scripts": {
             "dev": "npm-run-all --parallel dev:api dev:vite",
-            "dev:api": "nodemon --watch server --ext ts,tsx --exec tsx server/main.ts",
+            "dev:api": "nodemon --watch server --ext ts,tsx --exec 'tsx --env-file=.env server/main.ts'",
             "dev:vite": "vite",
             "build": "vite build && npm run bundle --prefix ./server",
             "copy:prisma": "npx prisma generate && mkdir -p dist/prisma dist/generated && cp -r prisma dist/prisma && cp -r generated dist/generated && cp -r node_modules/.prisma/client dist/generated/prisma"

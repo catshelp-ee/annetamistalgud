@@ -84,9 +84,9 @@ jobs:
               echo "✅ Google Sheets credentials copied"
             fi
 
-            # Restart via PM2 with NODE_ENV
+            # Restart via PM2 with NODE_ENV and load .env file
             cd ${{ env.APP_ROOT }}/annetamistalgud/dist
-            NODE_ENV=${{ env.NODE_ENV }} pm2 restart ${{ env.PM2_APP_NAME }} --update-env || NODE_ENV=${{ env.NODE_ENV }} pm2 start bundle.cjs --name ${{ env.PM2_APP_NAME }}
+            NODE_ENV=${{ env.NODE_ENV }} pm2 restart ${{ env.PM2_APP_NAME }} --update-env || NODE_ENV=${{ env.NODE_ENV }} pm2 start "node --env-file=${{ env.APP_ROOT }}/.env bundle.cjs" --name ${{ env.PM2_APP_NAME }}
 
             # TODO: Add cleanup step once pipeline works flawlessly
             # Cleanup old releases (keep last 5)
