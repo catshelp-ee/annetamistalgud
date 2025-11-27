@@ -85,7 +85,9 @@ jobs:
             fi
 
             # Restart via PM2 using config file
-            pm2 startOrRestart ${{ env.APP_ROOT }}/annetamistalgud/pm2.config.js --env ${{ env.NODE_ENV }}
+            # pm2 startOrRestart ${{ env.APP_ROOT }}/annetamistalgud/pm2.config.js --env ${{ env.NODE_ENV }}
+            pm2 delete ${{ env.PM2_APP_NAME }} 2>/dev/null || true
+            pm2 start ${{ env.APP_ROOT }}/annetamistalgud/pm2.config.js --env ${{ env.NODE_ENV }}
 
             # TODO: Add cleanup step once pipeline works flawlessly
             # Cleanup old releases (keep last 5)
