@@ -576,11 +576,11 @@ export default function App() {
                 <p className="font-['Schoolbell',sans-serif] leading-[normal] text-[#062d3e] text-[22px] md:text-[26px] mb-4">
                   Siis kui tellid toitu või kassitarbeid veebilehelt
                 </p>
-                <a 
-                  href="https://www.miumjau.ee" 
-                  target="_blank" 
+                <a
+                  href="https://www.miumjau.ee"
+                  target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block bg-[#ff80ce] hover:bg-[#ff90d6] text-white font-['Schoolbell',sans-serif] text-[25px] md:text-[28px] h-[70px] px-12 rounded-[247px] transition-colors leading-[70px]"
+                  className="inline-block bg-[#ff80ce] hover:bg-[#ff90d6] text-white font-['Schoolbell',sans-serif] text-[20px] md:text-[28px] h-[60px] md:h-[70px] px-6 md:px-12 rounded-[247px] transition-colors leading-[60px] md:leading-[70px]"
                 >
                   www.miumjau.ee
                 </a>
@@ -596,11 +596,11 @@ export default function App() {
               </div>
 
               <div>
-                <a 
-                  href="https://www.petcenter24.ee" 
-                  target="_blank" 
+                <a
+                  href="https://www.petcenter24.ee"
+                  target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block bg-[#29d4e8] hover:bg-[#36d6e9] text-white font-['Schoolbell',sans-serif] text-[25px] md:text-[28px] h-[70px] px-12 rounded-[247px] transition-colors leading-[70px]"
+                  className="inline-block bg-[#29d4e8] hover:bg-[#36d6e9] text-white font-['Schoolbell',sans-serif] text-[18px] md:text-[28px] h-[60px] md:h-[70px] px-6 md:px-12 rounded-[247px] transition-colors leading-[60px] md:leading-[70px]"
                 >
                   www.petcenter24.ee
                 </a>
