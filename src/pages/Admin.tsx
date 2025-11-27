@@ -356,6 +356,7 @@ export default function Admin() {
                   const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
                   setNewBill({ ...newBill, current: value });
                 }}
+                onFocus={(e) => e.target.select()}
                 className="h-[45px] rounded-[15px] border-2 border-black text-[16px] font-['Schoolbell',sans-serif] px-3"
                 placeholder="0"
                 disabled={loading}
@@ -372,6 +373,7 @@ export default function Admin() {
                   const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
                   setNewBill({ ...newBill, goal: value });
                 }}
+                onFocus={(e) => e.target.select()}
                 className="h-[45px] rounded-[15px] border-2 border-black text-[16px] font-['Schoolbell',sans-serif] px-3"
                 placeholder="0"
                 disabled={loading}
@@ -433,6 +435,7 @@ export default function Admin() {
                             updated[index] = { ...updated[index], current: value };
                             setVetBills(updated);
                           }}
+                          onFocus={(e) => e.target.select()}
                           className="h-[40px] rounded-[10px] border-2 border-black text-[16px] font-['Schoolbell',sans-serif] px-3"
                           placeholder="Kogutud"
                           disabled={loading}
@@ -446,6 +449,7 @@ export default function Admin() {
                             updated[index] = { ...updated[index], goal: value };
                             setVetBills(updated);
                           }}
+                          onFocus={(e) => e.target.select()}
                           className="h-[40px] rounded-[10px] border-2 border-black text-[16px] font-['Schoolbell',sans-serif] px-3"
                           placeholder="Eesmärk"
                           disabled={loading}

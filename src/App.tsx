@@ -344,7 +344,7 @@ export default function App() {
                   <div className="flex-1">
                     <div className="flex justify-between items-baseline mb-3">
                       <p className="font-['Schoolbell',sans-serif] text-[#062d3e] text-[20px] md:text-[25px] tracking-[1.5px]">
-                        {bill.name} {bill.issue && `- ${bill.issue}`}
+                        {bill.name} {bill.issue && bill.issue !== bill.name && `- ${bill.issue}`}
                       </p>
                       <p className="font-['Schoolbell',sans-serif] text-[#062d3e] text-[20px] md:text-[25px] tracking-[1.5px]">
                         {bill.current}€ / {bill.goal}€
