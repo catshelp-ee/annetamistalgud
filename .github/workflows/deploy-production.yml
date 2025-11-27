@@ -84,6 +84,11 @@ jobs:
               echo "✅ Google Sheets credentials copied"
             fi
 
+            # Generate Prisma client on server (ensures correct binary for this platform)
+            cd ${{ env.APP_ROOT }}/annetamistalgud
+            npx prisma generate --schema=prisma/schema.prisma
+            echo "✅ Prisma client generated for server platform"
+
             # Restart via PM2 with NODE_ENV and load .env file
             cd ${{ env.APP_ROOT }}/annetamistalgud/dist
             NODE_ENV=${{ env.NODE_ENV }} pm2 restart ${{ env.PM2_APP_NAME }} --update-env || NODE_ENV=${{ env.NODE_ENV }} pm2 start "node --env-file=${{ env.APP_ROOT }}/.env bundle.cjs" --name ${{ env.PM2_APP_NAME }}
